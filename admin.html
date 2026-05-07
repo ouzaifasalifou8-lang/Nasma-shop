@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nasma Admin & IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50 p-4">
+    <div class="max-w-md mx-auto space-y-6">
+        <div class="bg-white rounded-[32px] p-8 shadow-xl">
+            <h1 class="text-xl font-black mb-6 text-center italic text-blue-900">BOUTIQUE</h1>
+            <div class="space-y-4">
+                <input type="text" id="t" placeholder="Produit" class="w-full p-4 bg-gray-50 rounded-xl outline-none ring-1 ring-gray-200">
+                <input type="number" id="p" placeholder="Prix (CFA)" class="w-full p-4 bg-gray-50 rounded-xl outline-none ring-1 ring-gray-200">
+                <input type="number" id="r" placeholder="Promotion %" class="w-full p-4 bg-gray-50 rounded-xl outline-none ring-1 ring-gray-200">
+                <input type="file" id="f" class="text-xs">
+                <button onclick="publier()" id="btnP" class="w-full bg-[#1a3a5f] text-white font-bold py-4 rounded-xl">METTRE EN LIGNE 🚀</button>
+            </div>
+        </div>
+
+        <div class="bg-blue-600 rounded-[32px] p-8 shadow-xl text-white">
+            <h2 class="text-lg font-black mb-4 italic">INSTRUCTIONS IA</h2>
+            <textarea id="ia_info" placeholder="Ex: Livraison à Niamey uniquement, ou promo spéciale ce week-end..." class="w-full p-4 bg-white/10 rounded-xl outline-none mb-4 h-32 text-sm border border-white/20"></textarea>
+            <button onclick="updateIA()" class="w-full bg-white text-blue-600 font-black py-4 rounded-xl uppercase text-xs">Entraîner l'IA 🧠</button>
+        </div>
+    </div>
+
+    <script>
+        const sb = supabase.createClient('https://eycpromikafqjkiubueh.supabase.co', 'sb_publishable_Kyg7s5KiLMYrUll4YwT0OA_mFsQ2onr');
+
+        async function publier() {
+            const file = document.getElementById('f').files[0];
+            if(!file) return alert("Photo requise !");
+            const path = `${Date.now()}_${file.name}`;
+            await sb.storage.from('articles-images').upload(path, file);
+            const { data: { publicUrl } } = sb.storage.from('articles-images').getPublicUrl(path);
+
+            await sb.from('articles').insert([{
+                titre: document.getElementById('t').value,
+                prix: document.getElementById('p').value,
+                remise_pct: document.getElementById('r').value || 0,
+                image_url: publicUrl
+            }]);
+            alert("Produit ajouté !");
+        }
+
+        async function updateIA() {
+            const info = document.getElementById('ia_info').value;
+            const { error } = await sb.from('ia_connaissances').insert([{ instruction: info }]);
+            if(!error) { alert("L'IA est à jour ! ✅"); document.getElementById('ia_info').value = ""; }
+        }
+    </script>
+</body>
+</html>
