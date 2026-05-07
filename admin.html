@@ -3,54 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nasma Admin & IA</title>
+    <title>Nasma Admin | Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
 </head>
-<body class="bg-gray-50 p-4">
+<body class="bg-gray-50 p-4 pb-20">
+
     <div class="max-w-md mx-auto space-y-6">
-        <div class="bg-white rounded-[32px] p-8 shadow-xl">
-            <h1 class="text-xl font-black mb-6 text-center italic text-blue-900">BOUTIQUE</h1>
+        <div class="bg-white rounded-[32px] p-8 shadow-xl border border-gray-100">
+            <h1 class="text-xl font-black mb-6 text-center italic text-blue-900">NASMA DASHBOARD</h1>
+            
             <div class="space-y-4">
-                <input type="text" id="t" placeholder="Produit" class="w-full p-4 bg-gray-50 rounded-xl outline-none ring-1 ring-gray-200">
-                <input type="number" id="p" placeholder="Prix (CFA)" class="w-full p-4 bg-gray-50 rounded-xl outline-none ring-1 ring-gray-200">
-                <input type="number" id="r" placeholder="Promotion %" class="w-full p-4 bg-gray-50 rounded-xl outline-none ring-1 ring-gray-200">
-                <input type="file" id="f" class="text-xs">
-                <button onclick="publier()" id="btnP" class="w-full bg-[#1a3a5f] text-white font-bold py-4 rounded-xl">METTRE EN LIGNE 🚀</button>
+                <input type="text" id="t" placeholder="Nom du produit (ex: Yaourt Vanille)" class="w-full p-4 bg-gray-50 rounded-xl outline-none ring-1 ring-gray-200">
+                
+                <textarea id="desc" placeholder="Description (ex: Onctueux et frais...)" class="w-full p-4 bg-gray-50 rounded-xl outline-none ring-1 ring-gray-200 h-24 text-sm"></textarea>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="number" id="p" placeholder="Prix CFA" class="p-4 bg-gray-50 rounded-xl outline-none ring-1 ring-gray-200">
+                    <input type="number" id="r" placeholder="Promo %" class="p-4 bg-gray-50 rounded-xl outline-none ring-1 ring-gray-200">
+                </div>
+
+                <select id="cat" class="w-full p-4 bg-gray-50 rounded-xl outline-none ring-1 ring-gray-200 text-sm font-bold text-blue-800">
+                    <option value="Yaourts">Yaourts 🍦</option>
+                    <option value="Jus">Jus Frais 🥤</option>
+                    <option value="Patisseries">Pâtisseries 🥐</option>
+                    <option value="Délice">Autre Délice ✨</option>
+                </select>
+
+                <div class="p-4 border-2 border-dashed border-gray-200 rounded-xl">
+                    <p class="text-[10px] uppercase font-bold text-gray-400 mb-2">Photo du produit</p>
+                    <input type="file" id="f" class="text-xs w-full">
+                </div>
+
+                <button onclick="publier()" id="btnP" class="w-full bg-[#1a3a5f] text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-transform">
+                    METTRE EN LIGNE 🚀
+                </button>
             </div>
         </div>
 
         <div class="bg-blue-600 rounded-[32px] p-8 shadow-xl text-white">
-            <h2 class="text-lg font-black mb-4 italic">INSTRUCTIONS IA</h2>
-            <textarea id="ia_info" placeholder="Ex: Livraison à Niamey uniquement, ou promo spéciale ce week-end..." class="w-full p-4 bg-white/10 rounded-xl outline-none mb-4 h-32 text-sm border border-white/20"></textarea>
-            <button onclick="updateIA()" class="w-full bg-white text-blue-600 font-black py-4 rounded-xl uppercase text-xs">Entraîner l'IA 🧠</button>
+            <h2 class="text-lg font-black mb-4 italic">INSTRUCTIONS IA 🧠</h2>
+            <p class="text-[10px] uppercase tracking-widest opacity-70 mb-4">L'IA Nasma utilisera ces infos pour répondre aux clients</p>
+            <textarea id="ia_info" placeholder="Ex: Livraison gratuite à Niamey ce week-end ! Les yaourts sont faits ce matin..." class="w-full p-4 bg-white/10 rounded-xl outline-none mb-4 h-32 text-sm border border-white/20 placeholder:text-white/40"></textarea>
+            <button onclick="updateIA()" class="w-full bg-white text-blue-600 font-black py-4 rounded-xl uppercase text-xs">Mettre à jour l'IA</button>
+        </div>
+
+        <div class="bg-white rounded-[32px] p-8 shadow-xl border border-gray-100">
+            <h2 class="text-lg font-black mb-6 italic text-red-600">GESTION DU STOCK</h2>
+            <div id="liste-admin" class="space-y-4">
+                <p class="text-center text-gray-400 text-xs italic">Chargement des produits...</p>
+            </div>
         </div>
     </div>
 
     <script>
-        const sb = supabase.createClient('https://eycpromikafqjkiubueh.supabase.co', 'sb_publishable_Kyg7s5KiLMYrUll4YwT0OA_mFsQ2onr');
+        const SB_URL = 'https://eycpromikafqjkiubueh.supabase.co';
+        const SB_KEY = 'sb_publishable_Kyg7s5KiLMYrUll4YwT0OA_mFsQ2onr';
+        const sb = supabase.createClient(SB_URL, SB_KEY);
 
+        // 1. PUBLIER UN PRODUIT
         async function publier() {
+            const btn = document.getElementById('btnP');
             const file = document.getElementById('f').files[0];
-            if(!file) return alert("Photo requise !");
-            const path = `${Date.now()}_${file.name}`;
-            await sb.storage.from('articles-images').upload(path, file);
-            const { data: { publicUrl } } = sb.storage.from('articles-images').getPublicUrl(path);
+            
+            if(!file || !document.getElementById('t').value || !document.getElementById('p').value) {
+                return alert("Remplis au moins le nom, le prix et la photo !");
+            }
 
-            await sb.from('articles').insert([{
-                titre: document.getElementById('t').value,
-                prix: document.getElementById('p').value,
-                remise_pct: document.getElementById('r').value || 0,
-                image_url: publicUrl
-            }]);
-            alert("Produit ajouté !");
+            btn.disabled = true;
+            btn.innerText = "CHARGEMENT... ⏳";
+
+            try {
+                // Upload Image
+                const path = `${Date.now()}_${file.name}`;
+                const { error: uploadError } = await sb.storage.from('articles-images').upload(path, file);
+                if(uploadError) throw uploadError;
+
+                const { data: { publicUrl } } = sb.storage.from('articles-images').getPublicUrl(path);
+
+                // Insert Data
+                const { error: dbError } = await sb.from('articles').insert([{
+                    titre: document.getElementById('t').value,
+                    description: document.getElementById('desc').value,
+                    prix: document.getElementById('p').value,
+                    categorie: document.getElementById('cat').value,
+                    remise_pct: document.getElementById('r').value || 0,
+                    image_url: publicUrl
+                }]);
+
+                if(dbError) throw dbError;
+
+                alert("Produit ajouté avec succès ! ✅");
+                location.reload(); // Rafraîchit pour vider les champs et voir la liste
+
+            } catch (e) {
+                alert("Erreur : " + e.message);
+                btn.disabled = false;
+                btn.innerText = "METTRE EN LIGNE 🚀";
+            }
         }
 
+        // 2. ENTRAÎNER L'IA
         async function updateIA() {
             const info = document.getElementById('ia_info').value;
+            if(!info) return;
+            
             const { error } = await sb.from('ia_connaissances').insert([{ instruction: info }]);
-            if(!error) { alert("L'IA est à jour ! ✅"); document.getElementById('ia_info').value = ""; }
+            if(!error) { 
+                alert("L'IA est prête ! Elle connaît vos nouvelles consignes. ✅"); 
+                document.getElementById('ia_info').value = ""; 
+            }
         }
+
+        // 3. CHARGER & SUPPRIMER LES PRODUITS
+        async function chargerArticlesAdmin() {
+            const container = document.getElementById('liste-admin');
+            const { data, error } = await sb.from('articles').select('*').order('created_at', { ascending: false });
+
+            if(error || !data) {
+                container.innerHTML = "Erreur de chargement.";
+                return;
+            }
+
+            if(data.length === 0) {
+                container.innerHTML = "<p class='text-center text-gray-400 text-xs'>Boutique vide.</p>";
+            } else {
+                container.innerHTML = data.map(a => `
+                    <div class="flex justify-between items-center bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <img src="${a.image_url}" class="w-10 h-10 rounded-lg object-cover">
+                            <div>
+                                <p class="text-xs font-bold text-blue-900">${a.titre}</p>
+                                <p class="text-[9px] text-gray-400 uppercase">${a.categorie}</p>
+                            </div>
+                        </div>
+                        <button onclick="supprimerArticle(${a.id})" class="bg-red-50 text-red-500 p-2 rounded-xl text-[10px] font-black uppercase tracking-tighter">
+                            Supprimer
+                        </button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function supprimerArticle(id) {
+            if(confirm("Voulez-vous vraiment retirer ce produit de la vente ?")) {
+                const { error } = await sb.from('articles').delete().eq('id', id);
+                if(!error) { 
+                    alert("Produit retiré !"); 
+                    chargerArticlesAdmin(); 
+                }
+            }
+        }
+
+        // Init au chargement
+        chargerArticlesAdmin();
     </script>
 </body>
 </html>
