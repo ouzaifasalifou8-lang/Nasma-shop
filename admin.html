@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+            <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -50,8 +50,8 @@
                             <option value="Yaourts">Yaourts 🍦</option>
                             <option value="Jus">Jus Frais 🥤</option>
                             <option value="Patisseries">Pâtisseries 🥐</option>
-                            <Option value="Autres délices">Autres délices 😋</Option>
-                            <Option value="Autres articles">Autres articles 🎉💫</Option>
+                            <option value="Autres délices">Autres délices 😋</option>
+                            <option value="Autres articles">Autres articles 🎉💫</option>
                         </select>
                         <input type="file" id="f" class="text-[10px] block w-full text-gray-500">
                         <button onclick="publier()" id="btnP" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg">METTRE EN LIGNE 🚀</button>
@@ -236,6 +236,7 @@
             document.getElementById('liste-inconnues').innerHTML = data.length ? data.map(q => `<div>- ${q.question}</div>`).join('') : "RAS.";
         }
     </script>
+
+    <script defer src="/_vercel/insights/script.js"></script>
 </body>
-  </html>
-  
+</html>
